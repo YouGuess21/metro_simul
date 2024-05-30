@@ -83,43 +83,33 @@ class TRACK:
             block_rect = pygame.Rect(block.x * cell_size, block.y * cell_size, cell_size, cell_size)
             pygame.draw.rect(screen, self.color, block_rect)
     
-
     def to_set(self):
         return set((block.x, block.y) for block in self.route)
 
 class SIGNAL:
-    def __init__(self,  pos) :
+    def __init__(self, pos):
         self.pos = pos
         self.flag = False
 
     def draw_signal(self):
+        color = (0, 200, 0) if not self.flag else (200, 0, 0)
         sign_rect = pygame.Rect(self.pos.x * cell_size - 0.5 * cell_size, self.pos.y * cell_size - 0.5 * cell_size, 2 * cell_size, 2* cell_size)
-        pygame.draw.rect(screen, (0, 200, 0), sign_rect)
-    
+        pygame.draw.rect(screen, color, sign_rect)
+
     def update_signal(self, flag):
-        if flag == False:
-            sign_rect = pygame.Rect(self.pos.x * cell_size - 0.5 * cell_size, self.pos.y * cell_size - 0.5 * cell_size, 2 * cell_size, 2* cell_size)
-            pygame.draw.rect(screen, (0, 200, 0), sign_rect)
-        else:
-            sign_rect = pygame.Rect(self.pos.x * cell_size - 0.5 * cell_size, self.pos.y * cell_size - 0.5 * cell_size, 2 * cell_size, 2* cell_size)
-            pygame.draw.rect(screen, (200, 0, 0), sign_rect)
-
-
+        self.flag = flag
 
 class SENSOR:
-    def __init__(self,  pos, ntype) :
+    def __init__(self, pos, ntype):
         self.pos = pos
-        self.type = ntype #ntype is sensor type: 0 is caution, 1 safety
+        self.type = ntype # ntype is sensor type: 0 is caution, 1 safety
         self.flag = False
 
     def draw_sensor(self):
-        sens_rect = pygame.Rect(self.pos.x * cell_size - 0.5 * cell_size, self.pos.y * cell_size - 0.5 * cell_size, 2 * cell_size, 2* cell_size)
+        sens_rect = pygame.Rect(self.pos.x * cell_size - 0.5 * cell_size, self.pos.y * cell_size - 0.5 * cell_size, 2 * cell_size, 2 * cell_size)
         pygame.draw.rect(screen, (235, 235, 235), sens_rect)
-
-        bor_rect = pygame.Rect(self.pos.x * cell_size - 0.5 * cell_size, self.pos.y * cell_size - 0.5 * cell_size, 2 * cell_size, 2* cell_size)
-        pygame.draw.rect(screen, (0, 0, 0), bor_rect, 1)  
-
-# 
+        bor_rect = pygame.Rect(self.pos.x * cell_size - 0.5 * cell_size, self.pos.y * cell_size - 0.5 * cell_size, 2 * cell_size, 2 * cell_size)
+        pygame.draw.rect(screen, (0, 0, 0), bor_rect, 1)
 
 class TRAIN:
     def __init__(self, track, start_index, length=5):
@@ -133,10 +123,8 @@ class TRAIN:
         for block in self.body:
             block_rect = pygame.Rect(block.x * cell_size - 0.5 * cell_size, block.y * cell_size - 0.5 * cell_size, cell_size * 2, cell_size * 2)
             pygame.draw.rect(screen, self.color, block_rect)
-
             border_rect = pygame.Rect(block.x * cell_size - 0.5 * cell_size, block.y * cell_size - 0.5 * cell_size, cell_size * 2, cell_size * 2)
             pygame.draw.rect(screen, (0, 0, 0), border_rect, 1)  # The last argument is the width of the border
-
 
     def move_train(self):
         self.position_indices = [(index - 1) % len(self.track.route) for index in self.position_indices]
@@ -177,6 +165,7 @@ class MAIN:
             (Vector2(320, 86)), (Vector2(50, 26)), (Vector2(56, 41)), (Vector2(20, 136)),
             (Vector2(40, 146)), (Vector2(26, 160)), (Vector2(86, 18))
         ]
+
         for pos in signal_positions:
             self.signals.append(SIGNAL(pos))
 
@@ -191,6 +180,26 @@ class MAIN:
         for pos, sensor_type in safety_sensor_position:
             self.sensors.append(SENSOR(pos, sensor_type))
 
+        self.caution_to_signal = {
+            (260, 30): [Vector2(275, 20)], (270, 20): [Vector2(260, 25)], (225, 170): [Vector2(219, 158), Vector2(202, 180)],
+            (205, 180): [Vector2(227, 165)], (215, 160): [Vector2(227, 165)], (152, 30): [Vector2(166, 42)],
+            (162, 40): [Vector2(150, 25)], (130, 180): [Vector2(150, 165)], (150, 170): [Vector2(145, 160), Vector2(126, 182)],
+            (140, 160): [Vector2(150, 165)], (340, 100): [Vector2(335, 80)], (330, 80): [Vector2(341, 105), Vector2(320, 86)],
+            (320, 90): [Vector2(335, 80)], (50, 30): [Vector2(56, 41), Vector2(86, 18)], (60, 40): [Vector2(50, 26)],
+            (20, 140): [Vector2(26, 160)], (40, 150): [Vector2(26, 160)], (30, 160): [Vector2(20, 136), Vector2(40, 146)],
+            (83, 20): [Vector2(50, 26)]
+        }
+
+        self.caution_to_safety = {
+            (260, 30): Vector2(285, 30), (270, 20): Vector2(270, 45), (225, 170): Vector2(190, 170),
+            (205, 180): Vector2(205, 155), (215, 160): Vector2(215, 185), (152, 30): Vector2(177, 30),
+            (162, 40): Vector2(162, 15), (130, 180): Vector2(130, 155), (150, 170): Vector2(115, 170),
+            (140, 160): Vector2(140, 185), (340, 100): Vector2(315, 100), (330, 80): Vector2(330, 115),
+            (320, 90): Vector2(345, 90), (50, 30): Vector2(98, 30), (60, 40): Vector2(60, 15),
+            (20, 140): Vector2(45, 140), (40, 150): Vector2(15, 150), (30, 160): Vector2(30, 125),
+            (83, 20): Vector2(83, 45)
+        }
+
     def draw_elements(self):
         self.track0.draw_tracks()
         self.track1.draw_tracks()
@@ -204,8 +213,6 @@ class MAIN:
 
         for signal in self.signals:
             signal.draw_signal()
-        
-        self.signals[1].update_signal(True)
 
         for intersection in self.intersections:
             intersect_rect = pygame.Rect(intersection[0] * cell_size, intersection[1] * cell_size, cell_size, cell_size)
@@ -223,6 +230,25 @@ class MAIN:
         for train in self.trains:
             train.move_train()
 
+            train_head = (train.body[0].x, train.body[0].y)
+
+            for sensor in self.sensors:
+                if (train_head == (sensor.pos.x, sensor.pos.y)):
+                    if sensor.type == 0:
+                        sensor.flag = True
+                        if (sensor.pos.x, sensor.pos.y) in self.caution_to_signal:
+                            for signal_pos in self.caution_to_signal[(sensor.pos.x, sensor.pos.y)]:
+                                for signal in self.signals:
+                                    if signal.pos == signal_pos:
+                                        signal.update_signal(True)
+                    elif sensor.type == 1:
+                        sensor.flag = True
+                        for caution_pos, safety_pos in self.caution_to_safety.items():
+                            if safety_pos == sensor.pos:
+                                for signal_pos in self.caution_to_signal[caution_pos]:
+                                    for signal in self.signals:
+                                        if signal.pos == signal_pos:
+                                            signal.update_signal(False)
 
     def find_intersections(self):
         set0 = self.track0.to_set()
@@ -235,7 +261,7 @@ class MAIN:
 
 clock = pygame.time.Clock()
 SCREEN_UPDATE = pygame.USEREVENT
-pygame.time.set_timer(SCREEN_UPDATE, 15)
+pygame.time.set_timer(SCREEN_UPDATE, 150)
 
 main_game = MAIN()
 
@@ -250,6 +276,5 @@ while True:
     screen.fill(BG_COLOR)
     main_game.draw_elements()
     pygame.display.update()
-
 
     clock.tick(FPS)
