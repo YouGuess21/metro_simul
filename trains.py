@@ -180,6 +180,17 @@ class MAIN:
         for pos in signal_positions:
             self.signals.append(SIGNAL(pos))
 
+        safety_sensor_position = [
+            (Vector2(285, 30), 1), (Vector2(270, 45), 1), (Vector2(190, 170), 1), (Vector2(205, 155), 1),
+            (Vector2(215, 185), 1), (Vector2(177, 30), 1), (Vector2(162, 15), 1), (Vector2(130, 155), 1),
+            (Vector2(115, 170), 1), (Vector2(140, 185), 1), (Vector2(315, 100), 1), (Vector2(330, 115), 1),
+            (Vector2(345, 90), 1), (Vector2(98, 30), 1), (Vector2(60, 15), 1), (Vector2(45, 140), 1),
+            (Vector2(15, 150), 1), (Vector2(30, 125), 1), (Vector2(83, 45), 1)
+        ]
+
+        for pos, sensor_type in safety_sensor_position:
+            self.sensors.append(SENSOR(pos, sensor_type))
+
     def draw_elements(self):
         self.track0.draw_tracks()
         self.track1.draw_tracks()
