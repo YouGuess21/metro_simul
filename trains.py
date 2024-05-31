@@ -1,5 +1,4 @@
-import pygame
-import sys
+import pygame, sys, random
 from pygame.math import Vector2
 
 pygame.init()
@@ -11,6 +10,9 @@ cell_number = 200
 
 screen = pygame.display.set_mode((cell_size * cell_number * 1.8, cell_number * cell_size))
 pygame.display.set_caption("Train Tracks")
+
+def get_random_start_index(base_index):
+    return max(0, base_index + random.randint(-30, 30))
 
 class TRACK:
     def __init__(self, train_number):
@@ -92,7 +94,7 @@ class SIGNAL:
         self.flag = False
 
     def draw_signal(self):
-        color = (0, 200, 0) if not self.flag else (200, 0, 0)
+        color = (0, 100, 0) if not self.flag else (200, 0, 0)
         sign_rect = pygame.Rect(self.pos.x * cell_size - 0.5 * cell_size, self.pos.y * cell_size - 0.5 * cell_size, 2 * cell_size, 2* cell_size)
         pygame.draw.rect(screen, color, sign_rect)
 
@@ -113,7 +115,7 @@ class SENSOR:
 
 class TRAIN:
     def __init__(self, track, start_index, length=5):
-        self.color = (0, 255, 0)
+        self.color = (1, 225, 1)
         self.track = track
         self.start_index = start_index
         self.position_indices = [(start_index + i) % len(self.track.route) for i in range(length)]
@@ -126,9 +128,21 @@ class TRAIN:
             border_rect = pygame.Rect(block.x * cell_size - 0.5 * cell_size, block.y * cell_size - 0.5 * cell_size, cell_size * 2, cell_size * 2)
             pygame.draw.rect(screen, (0, 0, 0), border_rect, 1)  # The last argument is the width of the border
 
+    def check_signals(self, signals, signal_to_caution):
+        train_head = (self.body[0].x, self.body[0].y)
+        for sensor_pos in signal_to_caution.get(train_head, []):
+            for signal in signals:
+                if signal.pos == sensor_pos and signal.flag:  # Signal is red
+                    self.stop = True
+                    return
+        self.stop = False
+
+
     def move_train(self):
-        self.position_indices = [(index - 1) % len(self.track.route) for index in self.position_indices]
-        self.body = [self.track.route[i] for i in self.position_indices]
+        if not self.stop:
+            self.position_indices = [(index - 1) % len(self.track.route) for index in self.position_indices]
+            self.body = [self.track.route[i] for i in self.position_indices]
+
 
 class MAIN:
     def __init__(self):
@@ -142,10 +156,11 @@ class MAIN:
         self.sensors = []
         self.signals = []
 
-        for track, start_index in [(self.track0, 0), (self.track0, 294), (self.track0, 580),
-                                   (self.track1, 0), (self.track1, 315), (self.track1, 630), (self.track1, 945),
-                                   (self.track2, 0), (self.track2, 288), (self.track2, 574)]:
-            self.trains.append(TRAIN(track, start_index))
+        for track, base_index in [(self.track0, 0), (self.track0, 150), (self.track0, 580),
+                                  (self.track1, 0), (self.track1, 315), (self.track1, 630), (self.track1, 945),
+                                  (self.track2, 0), (self.track2, 288), (self.track2, 574)]:
+            random_start_index = get_random_start_index(base_index)
+            self.trains.append(TRAIN(track, random_start_index))
 
         caution_sensor_positions = [
             (Vector2(260, 30), 0), (Vector2(270, 20), 0), (Vector2(225, 170), 0), (Vector2(205, 180), 0),
@@ -200,6 +215,16 @@ class MAIN:
             (83, 20): Vector2(83, 45)
         }
 
+        self.signal_to_caution = {
+            (260, 30): [Vector2(260, 25)], (270, 20): [Vector2(275, 20)], (225, 170): [Vector2(227, 165)],
+            (205, 180): [Vector2(202, 180)], (215, 160): [Vector2(219, 158)], (152, 30): [Vector2(150, 25)],
+            (162, 40): [Vector2(166, 42)], (130, 180): [Vector2(126, 182)], (150, 170): [Vector2(150, 165)],
+            (140, 160): [Vector2(145, 160)], (340, 100): [Vector2(341, 105)], (330, 80): [Vector2(335, 80)],
+            (320, 90): [Vector2(320, 86)], (50, 30): [Vector2(50, 26)], (60, 40): [Vector2(56, 41)],
+            (20, 140): [Vector2(20, 136)], (40, 150): [Vector2(40, 146)], (30, 160): [Vector2(26, 160)],
+            (83, 20): [Vector2(86, 18)]
+        }
+
     def draw_elements(self):
         self.track0.draw_tracks()
         self.track1.draw_tracks()
@@ -228,6 +253,7 @@ class MAIN:
 
     def update(self):
         for train in self.trains:
+            train.check_signals(self.signals, self.signal_to_caution)
             train.move_train()
 
             train_head = (train.body[0].x, train.body[0].y)
@@ -255,8 +281,7 @@ class MAIN:
         set1 = self.track1.to_set()
         set2 = self.track2.to_set()
 
-        intersections = set0.intersection(set1).union(set0.intersection(set2)).union(set1.intersection(set2))
-        print(intersections)
+        intersections = set0.intersection(set1).union(set0.intersection(set2)).union(set1.intersection(set2)) # print(intersections)
         return intersections
 
 clock = pygame.time.Clock()
