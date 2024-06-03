@@ -9,7 +9,7 @@ cell_size = 5
 cell_number = 200
 
 screen = pygame.display.set_mode((cell_size * cell_number * 1.8, cell_number * cell_size))
-pygame.display.set_caption("Train Tracks")
+pygame.display.set_caption("Metro simulation")
 
 def get_random_start_index(base_index):
     return max(0, base_index + random.randint(-30, 30))
